@@ -2,10 +2,14 @@ import string
 from random import choice
 from typing import LiteralString, Annotated, Final
 import keyring
+from rich.console import Console
+from rich.table import Table
+
 import hasher
 from database import Database
 import typer
 
+# TODO: Add duplication check
 # TODO: Option to copy password into clipboard
 # TODO: Command to get password of a single service
 # TODO: Beautify output :)
@@ -98,14 +102,16 @@ def pypwgen(length: Annotated[int, typer.Option("--length", "-l", help="The leng
 @app.command(name="view")
 def view():
     database = Database("db.sqlite")
-    master_pwd = typer.prompt("Please enter your master password:", hide_input=True)
-
+    master_pwd = typer.prompt("Please enter your master password", hide_input=True)
+    table = Table("Service", "Password")
+    console = Console()
     with database as db:
         passwords = get_passwords(db)
         for password in passwords:
             (_, service, pwd) = password
             decrypted_value = hasher.decrypt_password(pwd, master_pwd)
-            typer.echo(f"{service}: {decrypted_value}")
+            table.add_row(service, decrypted_value)
+    console.print(table)
 
 
 if __name__ == "__main__":
