@@ -2,6 +2,7 @@ import string
 from random import choice
 from typing import LiteralString, Annotated, Final
 import keyring
+import rich
 from rich.console import Console
 from rich.table import Table
 
@@ -12,7 +13,6 @@ import typer
 # TODO: Add duplication check
 # TODO: Option to copy password into clipboard
 # TODO: Command to get password of a single service
-# TODO: Beautify output :)
 
 CHARS = string.ascii_letters
 SPECIALS: Final[LiteralString] = string.punctuation
@@ -68,7 +68,7 @@ def get_passwords(db: Database) -> list[tuple]:
 def init():
     master_pwd = typer.prompt("Please enter a master password", hide_input=True)
     keyring.set_password("pypwgen", "master", master_pwd)
-    typer.echo("Master password set successfully")
+    rich.print("✅ [green]Master password set successfully[/green]")
 
 
 @app.command(name="pwgen")
@@ -89,14 +89,14 @@ def pypwgen(length: Annotated[int, typer.Option("--length", "-l", help="The leng
 
     master_pwd: str | None = keyring.get_password("pypwgen", "master")
     if master_pwd is None:
-        typer.echo("Please run `pypwgen init` first")
+        rich.print("⚠️ [yellow]Please run `pypwgen init` first[/yellow]")
         return
 
     hashed: str = hash_password(password, master_pwd)
     with database as db:
         init_table(db)
         save_password(hashed, service.strip(), db)
-        if show: typer.echo(f"Saved password for {service}: {password}")
+        if show: rich.print(f"✅ [green]Saved password for [yellow]{service}[/yellow]: [red]{password}[/red][/green]")
 
 
 @app.command(name="view")
